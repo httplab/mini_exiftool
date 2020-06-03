@@ -220,22 +220,22 @@ class MiniExiftool
     temp_filename = temp_file.path
     FileUtils.cp filename.encode(@@fs_enc), temp_filename
     all_ok = true
+    params = '-q -P -overwrite_original '
     @changed_values.each do |tag, val|
       original_tag = MiniExiftool.original_tag(tag)
       arr_val = val.kind_of?(Array) ? val : [val]
       arr_val.map! {|e| convert_before_save(e)}
-      params = '-q -P -overwrite_original '
       params << (arr_val.detect {|x| x.kind_of?(Numeric)} ? '-n ' : '')
       params << (@opts[:ignore_minor_errors] ? '-m ' : '')
       params << generate_encoding_params
       arr_val.each do |v|
         params << %Q(-#{original_tag}=#{escape(v)} )
       end
-      result = run(cmd_gen(params, temp_filename))
-      unless result
-        all_ok = false
-        @errors[tag] = @error_text.gsub(/Nothing to do.\n\z/, '').chomp
-      end
+    end
+    result = run(cmd_gen(params, temp_filename))
+    unless result
+      all_ok = false
+      @errors['error'] = @error_text.gsub(/Nothing to do.\n\z/, '').chomp
     end
     if all_ok
       FileUtils.cp temp_filename, filename.encode(@@fs_enc)
