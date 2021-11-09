@@ -90,6 +90,10 @@ photo.save
 # Copying meta data
 photo = MiniExiftool.new('photo.jpg')
 photo.copy_tags_from('another_photo.jpg', :author)
+
+# Removing all metadata
+photo = MiniExiftool.new('photo.jpg')
+photo.clear_all_tags
 ```
 
 For further information about using MiniExiftool read the Tutorial.md.

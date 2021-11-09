@@ -269,6 +269,30 @@ class MiniExiftool
     result
   end
 
+  def clear_all_tags
+    raise MiniExiftool::Error.new('No writing support when using an IO.') if @io
+
+    @errors.clear
+
+    temp_file = Tempfile.new('mini_exiftool')
+    temp_file.close
+    temp_filename = temp_file.path
+    FileUtils.cp filename.encode(@@fs_enc), temp_filename
+    all_ok = true
+
+    result = run(cmd_gen('-all=', temp_filename))
+
+    if result
+      FileUtils.cp temp_filename, filename.encode(@@fs_enc)
+      reload
+    else
+      @errors['error'] = @error_text.gsub(/Nothing to do.\n\z/, '').chomp
+    end
+    temp_file.delete
+
+    result
+  end
+
   # Returns a hash of the original loaded values of the MiniExiftool
   # instance.
   def to_hash
