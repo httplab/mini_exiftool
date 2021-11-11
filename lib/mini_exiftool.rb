@@ -22,11 +22,11 @@ require 'rbconfig'
 require 'set'
 require 'tempfile'
 require 'time'
+require 'yaml'
 
 # Simple OO access to the ExifTool command-line application.
 class MiniExiftool
-
-  VERSION = '2.10.1'
+  VERSION = '2.10.2'
 
   # Name of the ExifTool command-line application
   @@cmd = 'exiftool'
@@ -149,7 +149,7 @@ class MiniExiftool
     params = '-j '
     params << (@opts[:numerical] ? '-n ' : '')
     params << (@opts[:composite] ? '' : '-e ')
-    params << (@opts[:coord_format] ? "-c \"#{@opts[:coord_format]}\"" : '')
+    params << (@opts[:coord_format] ? "-c #{escape(@opts[:coord_format])}" : '')
     params << (@opts[:fast] ? '-fast ' : '')
     params << (@opts[:fast2] ? '-fast2 ' : '')
     params << generate_encoding_params
@@ -304,7 +304,7 @@ class MiniExiftool
   # Create a MiniExiftool instance from YAML data created with
   # MiniExiftool#to_yaml
   def self.from_yaml yaml, opts={}
-    MiniExiftool.from_hash YAML.load(yaml), opts
+    MiniExiftool.from_hash YAML.unsafe_load(yaml), opts
   end
 
   # Returns the command name of the called ExifTool application.
@@ -461,8 +461,8 @@ class MiniExiftool
       end
     when /^\+\d+\.\d+$/
       value = value.to_f
-    when /^0+[1-9]+$/
-      # nothing => String
+    when /^0\d+$/
+      # no conversion => String
     when /^-?\d+$/
       value = value.to_i
     when %r(^(\d+)/(\d+)$)
@@ -535,11 +535,11 @@ class MiniExiftool
 
   if @@running_on_windows
     def escape val
-      '"' << val.to_s.gsub(/([\\"])/, "\\\\\\1") << '"'
+      '"' << val.to_s.gsub(/([\\"`])/, "\\\\\\1") << '"'
     end
   else
     def escape val
-      '"' << val.to_s.gsub(/([\\"$])/, "\\\\\\1") << '"'
+      '"' << val.to_s.gsub(/([\\"$`])/, "\\\\\\1") << '"'
     end
   end
 
@@ -551,6 +551,16 @@ class MiniExiftool
       end
     end
     params
+  end
+
+  # Backport YAML.unsafe_load
+  unless defined? YAML.unsafe_load
+    module BackportYAML
+      def unsafe_load *args
+        load *args
+      end
+    end
+    YAML.extend BackportYAML
   end
 
   # Hash with indifferent access:
