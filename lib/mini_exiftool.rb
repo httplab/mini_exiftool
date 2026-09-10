@@ -241,8 +241,9 @@ class MiniExiftool
       FileUtils.cp temp_filename, filename.encode(@@fs_enc)
       reload
     end
-    temp_file.delete
     all_ok
+  ensure
+    temp_file&.delete
   end
 
   def save!
@@ -280,7 +281,7 @@ class MiniExiftool
     FileUtils.cp filename.encode(@@fs_enc), temp_filename
     all_ok = true
 
-    result = run(cmd_gen('-all=', temp_filename))
+    result = run(cmd_gen('-overwrite_original -all=', temp_filename))
 
     if result
       FileUtils.cp temp_filename, filename.encode(@@fs_enc)
@@ -288,9 +289,10 @@ class MiniExiftool
     else
       @errors['error'] = @error_text.gsub(/Nothing to do.\n\z/, '').chomp
     end
-    temp_file.delete
 
     result
+  ensure
+    temp_file&.delete
   end
 
   # Returns a hash of the original loaded values of the MiniExiftool
